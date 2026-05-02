@@ -5,25 +5,56 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>TechCart - Inicio</title>
     <link rel="stylesheet" href="css/global.css">
+    <style>
+        /* Estilos específicos para centrar el hero de forma minimalista */
+        .hero-section {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            /* La altura de la ventana menos el tamaño aproximado de la barra de navegación */
+            min-height: calc(100vh - 80px);
+            padding: 2rem;
+        }
+
+        .hero-section h1 {
+            font-size: 3.5rem;
+            color: var(--text-main);
+            margin-bottom: 1rem;
+            letter-spacing: -1px;
+        }
+
+        .hero-section p {
+            font-size: 1.2rem;
+            color: var(--text-muted);
+            max-width: 600px;
+            margin-bottom: 2.5rem;
+            line-height: 1.8;
+        }
+
+        .btn-hero {
+            font-size: 1.1rem;
+            padding: 0.8rem 2.5rem;
+            border-radius: 30px; /* Botón un poco más redondeado para un look moderno */
+        }
+    </style>
 </head>
 <body>
 <nav class="navbar">
     <a href="index.html" class="logo">TechCart</a>
     <div class="nav-links">
-        <a href="#">Catálogo</a>
+        <a href="catalogo.html">Catálogo</a>
+        <a href="carrito/carrito.html">🛒 Mi Carrito</a>
         <a href="login/login.html">Iniciar Sesión</a>
         <a href="login/registro.html" class="btn btn-outline" style="color: white; border-color: white;">Registrarse</a>
     </div>
 </nav>
 
-<main class="container fade-in">
-    <section style="text-align: center; padding: 4rem 0;">
-        <h1 style="font-size: 2.5rem; margin-bottom: 1rem;">La mejor tecnología a tu alcance</h1>
-        <p style="color: var(--text-muted); font-size: 1.2rem; margin-bottom: 2rem;">Explora nuestro catálogo y encuentra lo que necesitas.</p>
-        <a href="#" class="btn btn-primary">Ver Productos</a>
-    </section>
-
-    <!-- Aquí irá el grid de productos más adelante -->
+<main class="hero-section fade-in visible">
+    <h1>Tecnología que impulsa tu vida</h1>
+    <p>Descubre nuestra selección exclusiva de dispositivos electrónicos. Rendimiento, diseño premium y la mejor calidad en un solo lugar.</p>
+    <a href="catalogo.html" class="btn btn-primary btn-hero">Ver Productos</a>
 </main>
 
 <script src="js/global.js"></script>

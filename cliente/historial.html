@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mis Pedidos - TechCart</title>
+  <link rel="stylesheet" href="../css/global.css">
+</head>
+<body>
+<nav class="navbar">
+  <a href="../index.html" class="logo">TechCart</a>
+  <div class="nav-links">
+    <a href="../carrito/carrito.html">Mi Carrito</a>
+  </div>
+</nav>
+
+<div class="container fade-in visible">
+  <h2>Historial de Mis Pedidos</h2>
+  <div id="listaPedidos" style="margin-top: 2rem;">
+    <p>Cargando pedidos...</p>
+  </div>
+</div>
+
+<script type="module">
+  import { supabase } from '../js/supabaseClient.js';
+
+  async function cargarHistorial() {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) {
+      window.location.href = '../login/login.html';
+      return;
+    }
+
+    const contenedor = document.getElementById('listaPedidos');
+
+    // Consultar pedidos del cliente ordenados por fecha
+    const { data: pedidos, error } = await supabase
+            .from('pedidos')
+            .select('*')
+            .eq('cliente_id', session.user.id)
+            .order('fecha', { ascending: false });
+
+    if (error || !pedidos) {
+      contenedor.innerHTML = '<p>Error al cargar el historial.</p>';
+      return;
+    }
+
+    if (pedidos.length === 0) {
+      contenedor.innerHTML = '<p>Aún no has realizado ninguna compra.</p>';
+      return;
+    }
+
+    contenedor.innerHTML = '';
+    pedidos.forEach(pedido => {
+      // Formatear fecha
+      const fecha = new Date(pedido.fecha).toLocaleDateString();
+
+      // Colores para el estado
+      let colorEstado = '#666';
+      if(pedido.estado === 'pendiente') colorEstado = '#f0ad4e'; // Naranja
+      if(pedido.estado === 'enviado') colorEstado = '#5bc0de'; // Azul claro
+      if(pedido.estado === 'entregado') colorEstado = '#5cb85c'; // Verde
+
+      contenedor.innerHTML += `
+                    <div class="card" style="margin-bottom: 1rem; border-left: 5px solid ${colorEstado};">
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <div>
+                                <p style="font-size: 0.9rem; color: var(--text-muted);">Pedido ID: ${pedido.id.substring(0,8)}... | Fecha: ${fecha}</p>
+                                <h4 style="margin-top: 0.5rem;">Estado: <span style="color: ${colorEstado}; text-transform: uppercase;">${pedido.estado}</span></h4>
+                            </div>
+                            <div>
+                                <h3>Total: $${pedido.total}</h3>
+                            </div>
+                        </div>
+                    </div>
+                `;
+    });
+  }
+
+  document.addEventListener('DOMContentLoaded', cargarHistorial);
+</script>
+</body>
+</html>

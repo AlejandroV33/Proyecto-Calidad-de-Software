@@ -1,0 +1,53 @@
+-- 1. Crear un tipo ENUM para los roles y estados
+CREATE TYPE user_role AS ENUM ('cliente', 'vendedor');
+CREATE TYPE order_status AS ENUM ('pendiente', 'enviado', 'entregado', 'cancelado');
+
+-- 2. Tabla de Perfiles (Extensión de la tabla auth.users de Supabase)
+CREATE TABLE perfiles (
+  id UUID REFERENCES auth.users ON DELETE CASCADE PRIMARY KEY,
+  email TEXT UNIQUE,
+  nombre_completo TEXT,
+  rol user_role DEFAULT 'cliente',
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW())
+);
+
+-- 3. Tabla de Categorías
+CREATE TABLE categorias (
+  id SERIAL PRIMARY KEY,
+  nombre TEXT NOT NULL UNIQUE
+);
+
+-- 4. Tabla de Productos (CRUD para Vendedores)
+CREATE TABLE productos (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  vendedor_id UUID REFERENCES perfiles(id),
+  nombre TEXT NOT NULL,
+  descripcion TEXT,
+  precio NUMERIC(10, 2) NOT NULL,
+  imagen_url TEXT,
+  stock INTEGER DEFAULT 0,
+  categoria_id INTEGER REFERENCES categorias(id),
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW())
+);
+
+-- 5. Tabla de Pedidos (Historial de compras)
+CREATE TABLE pedidos (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  cliente_id UUID REFERENCES perfiles(id),
+  estado order_status DEFAULT 'pendiente',
+  total NUMERIC(10, 2) DEFAULT 0,
+  fecha TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW())
+);
+
+-- 6. Detalle de los Pedidos (Relación muchos a muchos entre productos y pedidos)
+CREATE TABLE detalles_pedido (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  pedido_id UUID REFERENCES pedidos(id) ON DELETE CASCADE,
+  producto_id UUID REFERENCES productos(id),
+  cantidad INTEGER NOT NULL,
+  precio_unitario NUMERIC(10, 2) NOT NULL
+);
+
+-- 7. Insertar categorías base para electrónicos
+INSERT INTO categorias (nombre) VALUES
+('Laptops'), ('Celulares'), ('Componentes'), ('Accesorios');

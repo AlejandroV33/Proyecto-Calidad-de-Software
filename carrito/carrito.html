@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mi Carrito - TechCart</title>
+  <link rel="stylesheet" href="../css/global.css">
+</head>
+<body>
+<nav class="navbar">
+  <a href="../index.html" class="logo">TechCart</a>
+  <div class="nav-links">
+    <a href="../index.html">Seguir Comprando</a>
+    <a href="../cliente/historial.html">Mis Pedidos</a>
+  </div>
+</nav>
+
+<div class="container fade-in visible">
+  <h2>Carrito de Compras</h2>
+
+  <div class="card" style="margin-top: 1.5rem;">
+    <div id="listaCarrito">
+      <!-- Los items del carrito se cargarán aquí -->
+    </div>
+
+    <hr style="margin: 1.5rem 0; border: 0; border-top: 1px solid #ddd;">
+
+    <div style="display: flex; justify-content: space-between; align-items: center;">
+      <h3>Total: $<span id="totalCarrito">0.00</span></h3>
+      <button id="btnConfirmar" class="btn btn-primary">Confirmar Compra</button>
+    </div>
+    <div id="msgError" style="color: red; margin-top: 1rem; display: none;"></div>
+  </div>
+</div>
+
+<script type="module" src="carrito.js"></script>
+</body>
+</html>
