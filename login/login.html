@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Iniciar Sesión - TechCart</title>
+  <link rel="stylesheet" href="../css/global.css">
+  <style>
+    /* Estilos específicos para centrar el cuadro de login */
+    .auth-container {
+      max-width: 400px;
+      margin: 4rem auto;
+    }
+    .error-msg {
+      color: #dc3545; /* Rojo para errores */
+      font-size: 0.9rem;
+      margin-top: 0.5rem;
+      display: none;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+<nav class="navbar">
+  <a href="../index.html" class="logo">TechCart</a>
+</nav>
+
+<div class="container auth-container fade-in visible">
+  <div class="card">
+    <h2 style="text-align: center; margin-bottom: 1.5rem;">Iniciar Sesión</h2>
+
+    <form id="loginForm">
+      <div class="form-group">
+        <label for="emailLogin">Correo Electrónico</label>
+        <input type="email" id="emailLogin" class="form-control" placeholder="tu@correo.com" required>
+      </div>
+
+      <div class="form-group">
+        <label for="passwordLogin">Contraseña</label>
+        <input type="password" id="passwordLogin" class="form-control" placeholder="••••••••" required>
+      </div>
+
+      <div id="loginError" class="error-msg"></div>
+
+      <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 1rem;" id="btnLogin">Entrar</button>
+    </form>
+
+    <p style="text-align: center; margin-top: 1.5rem; color: var(--text-muted);">
+      ¿No tienes cuenta? <a href="registro.html">Regístrate aquí</a>
+    </p>
+  </div>
+</div>
+
+<!-- Importamos el JS global para las animaciones y el JS específico del login -->
+<script src="../js/global.js"></script>
+<script type="module" src="login.js"></script>
+</body>
+</html>

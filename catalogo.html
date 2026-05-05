@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TechCart - Catálogo</title>
+  <link rel="stylesheet" href="css/global.css">
+</head>
+<body>
+<nav class="navbar">
+  <a href="index.html" class="logo">TechCart</a>
+  <div class="nav-links">
+    <a href="catalogo.html" style="font-weight: bold; text-decoration: underline;">Catálogo</a>
+    <a href="carrito/carrito.html">🛒 Mi Carrito</a>
+    <a href="login/login.html">Iniciar Sesión</a>
+    <a href="login/registro.html" class="btn btn-outline" style="color: white; border-color: white;">Registrarse</a>
+  </div>
+</nav>
+
+<main class="container fade-in visible">
+  <h2 style="margin-bottom: 1.5rem; text-align: center;">Catálogo de Productos</h2>
+
+  <!-- Barra de Filtros -->
+  <div class="card" style="margin-bottom: 2rem; padding: 1.5rem;">
+    <form id="formFiltros" style="display: flex; gap: 1rem; flex-wrap: wrap; align-items: flex-end;">
+      <div style="flex: 1; min-width: 200px;">
+        <label for="filtroNombre">Buscar producto</label>
+        <input type="text" id="filtroNombre" class="form-control" placeholder="Ej. Laptop, Monitor...">
+      </div>
+
+      <div style="flex: 1; min-width: 150px;">
+        <label for="filtroPrecio">Precio máximo ($)</label>
+        <input type="number" id="filtroPrecio" class="form-control" placeholder="Ej. 500">
+      </div>
+
+      <div style="flex: 1; min-width: 200px;">
+        <label for="filtroCategoria">Categoría</label>
+        <select id="filtroCategoria" class="form-control">
+          <option value="">Todas las categorías</option>
+          <!-- Las opciones se inyectan con JS -->
+        </select>
+      </div>
+
+      <button type="submit" class="btn btn-primary" style="padding: 0.75rem 1.5rem;">Aplicar Filtros</button>
+    </form>
+  </div>
+
+  <!-- Contenedor donde aparecerán los productos -->
+  <div id="gridProductos" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 1.5rem;">
+    <!-- Los productos se inyectan aquí dinámicamente -->
+  </div>
+</main>
+
+<script src="js/global.js"></script>
+<script type="module" src="js/catalogo.js"></script>
+</body>
+</html>

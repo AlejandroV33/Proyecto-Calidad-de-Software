@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Panel de Vendedor - TechCart</title>
+  <link rel="stylesheet" href="../css/global.css">
+</head>
+<body>
+<nav class="navbar">
+  <a href="../index.html" class="logo">TechCart - Vendedor</a>
+  <div class="nav-links">
+    <a href="#" id="btnCerrarSesion">Cerrar Sesión</a>
+  </div>
+</nav>
+
+<div class="container fade-in visible">
+  <h2>Mis Productos</h2>
+
+  <div class="card" style="margin: 2rem 0;">
+    <h3>Agregar Nuevo Producto</h3>
+    <form id="formProducto" style="display: grid; gap: 1rem; margin-top: 1rem;">
+      <input type="text" id="prodNombre" class="form-control" placeholder="Nombre del producto" required>
+      <textarea id="prodDesc" class="form-control" placeholder="Descripción" required></textarea>
+      <div style="display: flex; gap: 1rem;">
+        <input type="number" id="prodPrecio" class="form-control" placeholder="Precio ($)" step="0.01" required>
+        <input type="number" id="prodStock" class="form-control" placeholder="Stock disponible" required>
+      </div>
+      <input type="text" id="prodImg" class="form-control" placeholder="URL de la imagen">
+      <select id="prodCategoria" class="form-control" required>
+        <!-- Se llena con JS -->
+      </select>
+      <button type="submit" class="btn btn-primary">Guardar Producto</button>
+    </form>
+  </div>
+
+  <div id="listaMisProductos" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 1.5rem;">
+    <!-- Productos del vendedor -->
+  </div>
+</div>
+
+<script type="module" src="crud.js"></script>
+</body>
+</html>
