@@ -45,8 +45,13 @@ if (registroForm) {
                 window.location.href = 'login.html';
             }
         } catch (error) {
-            errorDiv.textContent = error.message;
-            errorDiv.style.display = 'block';
+            if (error.message === 'User already registered') {
+                errorDiv.textContent = 'Este correo ya está registrado. Por favor, inicia sesión o usa otro correo.';
+                errorDiv.style.display = 'block';
+            } else {
+                errorDiv.textContent = error.message;
+                errorDiv.style.display = 'block';
+            }
         } finally {
             btn.textContent = 'Registrarse';
             btn.disabled = false;
