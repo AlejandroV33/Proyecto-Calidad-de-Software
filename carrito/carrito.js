@@ -5,10 +5,42 @@ const totalCarritoEl = document.getElementById('totalCarrito');
 const btnConfirmar = document.getElementById('btnConfirmar');
 const msgError = document.getElementById('msgError');
 
-let carritoActual = JSON.parse(localStorage.getItem('techcart_carrito')) || [];
+let carritoActual = [];
 
-// Mostrar productos del carrito (01H7)
+// Mostrar productos del carrito (Desde Base de Datos)
 async function renderizarCarrito() {
+    listaCarrito.innerHTML = '<p>Cargando carrito...</p>';
+    
+    // 1. Verificar sesión
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) {
+        listaCarrito.innerHTML = '<p>Debes iniciar sesión para ver tu carrito.</p>';
+        btnConfirmar.disabled = true;
+        return;
+    }
+
+    // 2. Obtener items del carrito junto con info de productos
+    const { data: items, error } = await supabase
+        .from('carrito')
+        .select(`
+            id,
+            cantidad,
+            producto_id,
+            productos (
+                id,
+                nombre,
+                precio,
+                imagen_url
+            )
+        `)
+        .eq('usuario_id', session.user.id);
+
+    if (error) {
+        listaCarrito.innerHTML = '<p>Error al cargar el carrito.</p>';
+        return;
+    }
+
+    carritoActual = items;
     listaCarrito.innerHTML = '';
     let total = 0;
 
@@ -21,62 +53,74 @@ async function renderizarCarrito() {
 
     btnConfirmar.disabled = false;
 
-    // Obtener detalles de los productos desde Supabase
-    const ids = carritoActual.map(item => item.id);
-    const { data: productos, error } = await supabase
-        .from('productos')
-        .select('id, nombre, imagen_url')
-        .in('id', ids);
+    carritoActual.forEach((item) => {
+        const prod = item.productos;
+        const subtotal = prod.precio * item.cantidad;
+        total += subtotal;
 
-    if (productos) {
-        carritoActual.forEach((item, index) => {
-            const infoProd = productos.find(p => p.id === item.id);
-            const subtotal = item.precio * item.cantidad;
-            total += subtotal;
-
-            listaCarrito.innerHTML += `
-                <div style="display: flex; justify-content: space-between; align-items: center; padding: 1rem 0; border-bottom: 1px solid #eee;">
-                    <div style="display: flex; gap: 1rem; align-items: center;">
-                        <img src="${infoProd.imagen_url || 'https://via.placeholder.com/50'}" style="width: 50px; height: 50px; border-radius: 4px;">
-                        <div>
-                            <h4>${infoProd.nombre}</h4>
-                            <p style="color: var(--text-muted);">$${item.precio} c/u</p>
-                        </div>
-                    </div>
-                    <div style="display: flex; gap: 1rem; align-items: center;">
-                        <input type="number" min="1" value="${item.cantidad}" onchange="actualizarCant(${index}, this.value)" style="width: 60px; padding: 0.3rem;">
-                        <button class="btn btn-outline" onclick="eliminarItem(${index})" style="color: red; border-color: red; padding: 0.3rem 0.6rem;">X</button>
+        listaCarrito.innerHTML += `
+            <div style="display: flex; justify-content: space-between; align-items: center; padding: 1rem 0; border-bottom: 1px solid #eee;">
+                <div style="display: flex; gap: 1rem; align-items: center;">
+                    <img src="${prod.imagen_url || 'https://via.placeholder.com/50'}" style="width: 50px; height: 50px; border-radius: 4px;">
+                    <div>
+                        <h4>${prod.nombre}</h4>
+                        <p style="color: var(--text-muted);">$${prod.precio} c/u</p>
                     </div>
                 </div>
-            `;
-        });
-        totalCarritoEl.textContent = total.toFixed(2);
-    }
+                <div style="display: flex; gap: 1rem; align-items: center;">
+                    <input type="number" min="1" value="${item.cantidad}" onchange="actualizarCant('${item.id}', this.value)" style="width: 60px; padding: 0.3rem;">
+                    <button class="btn btn-outline" onclick="eliminarItem('${item.id}')" style="color: red; border-color: red; padding: 0.3rem 0.6rem;">X</button>
+                </div>
+            </div>
+        `;
+    });
+    totalCarritoEl.textContent = total.toFixed(2);
 }
 
-// 01H7: Actualizar cantidad y Eliminar
-window.actualizarCant = (index, nuevaCantidad) => {
-    carritoActual[index].cantidad = parseInt(nuevaCantidad);
-    localStorage.setItem('techcart_carrito', JSON.stringify(carritoActual));
-    renderizarCarrito();
+// Actualizar cantidad en la BD
+window.actualizarCant = async (itemId, nuevaCantidad) => {
+    const cant = parseInt(nuevaCantidad);
+    if (cant < 1) return;
+
+    const { error } = await supabase
+        .from('carrito')
+        .update({ cantidad: cant })
+        .eq('id', itemId);
+
+    if (error) {
+        console.error('Error al actualizar:', error);
+    } else {
+        renderizarCarrito();
+    }
 };
 
-window.eliminarItem = (index) => {
-    carritoActual.splice(index, 1);
-    localStorage.setItem('techcart_carrito', JSON.stringify(carritoActual));
-    renderizarCarrito();
+// Eliminar item de la BD
+window.eliminarItem = async (itemId) => {
+    const { error } = await supabase
+        .from('carrito')
+        .delete()
+        .eq('id', itemId);
+
+    if (error) {
+        console.error('Error al eliminar:', error);
+    } else {
+        renderizarCarrito();
+    }
 };
 
-// 01H10: Confirmar Compra
+// Confirmar Compra
 btnConfirmar.addEventListener('click', async () => {
+    if (carritoActual.length === 0) {
+        alert("El carrito está vacío.");
+        return;
+    }
+
     btnConfirmar.textContent = 'Procesando...';
     btnConfirmar.disabled = true;
     msgError.style.display = 'none';
 
-    // 1. Verificar que el usuario tenga sesión iniciada
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) {
-        alert("Debes iniciar sesión para confirmar tu compra.");
         window.location.href = '../login/login.html';
         return;
     }
@@ -84,7 +128,7 @@ btnConfirmar.addEventListener('click', async () => {
     try {
         const total = parseFloat(totalCarritoEl.textContent);
 
-        // 2. Crear el pedido con estado inicial "pendiente" (01H10)
+        // 1. Crear el pedido
         const { data: pedido, error: errorPedido } = await supabase
             .from('pedidos')
             .insert([{ cliente_id: session.user.id, estado: 'pendiente', total: total }])
@@ -93,23 +137,30 @@ btnConfirmar.addEventListener('click', async () => {
 
         if (errorPedido) throw errorPedido;
 
-        // 3. Insertar los detalles del pedido
+        // 2. Insertar los detalles del pedido
         const detalles = carritoActual.map(item => ({
             pedido_id: pedido.id,
-            producto_id: item.id,
+            producto_id: item.producto_id,
             cantidad: item.cantidad,
-            precio_unitario: item.precio
+            precio_unitario: item.productos.precio
         }));
 
         const { error: errorDetalles } = await supabase.from('detalles_pedido').insert(detalles);
         if (errorDetalles) throw errorDetalles;
 
-        // 4. Limpiar carrito y finalizar
-        localStorage.removeItem('techcart_carrito');
-        alert("¡Compra confirmada! Tu pedido está pendiente.");
+        // 3. Limpiar carrito en la BD
+        const { error: errorLimpieza } = await supabase
+            .from('carrito')
+            .delete()
+            .eq('usuario_id', session.user.id);
+        
+        if (errorLimpieza) throw errorLimpieza;
+
+        alert("¡Compra confirmada! Tu pedido ha sido registrado.");
         window.location.href = '../cliente/historial.html';
 
     } catch (error) {
+        console.error(error);
         msgError.textContent = "Hubo un error al procesar tu compra.";
         msgError.style.display = 'block';
         btnConfirmar.textContent = 'Confirmar Compra';

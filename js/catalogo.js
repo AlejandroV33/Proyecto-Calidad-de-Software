@@ -57,20 +57,48 @@ async function cargarCatalogo() {
 }
 
 // Para usar en el botón de agregar al carrito
-window.agregarAlCarrito = (id, precio) => {
-    // Obtenemos el carrito actual o creamos uno vacío
-    let carrito = JSON.parse(localStorage.getItem('techcart_carrito')) || [];
-
-    // Verificamos si el producto ya está en el carrito
-    const existe = carrito.find(item => item.id === id);
-
-    if (existe) {
-        existe.cantidad += 1; // 01H7: Actualizar cantidad
-    } else {
-        carrito.push({ id: id, cantidad: 1, precio: precio }); // 01H7: Agregar producto
+window.agregarAlCarrito = async (id) => {
+    // 1. Verificar si el usuario está logueado
+    const { data: { session } } = await supabase.auth.getSession();
+    
+    if (!session) {
+        alert("Debes iniciar sesión para añadir productos al carrito.");
+        window.location.href = 'login/login.html';
+        return;
     }
 
-    localStorage.setItem('techcart_carrito', JSON.stringify(carrito));
+    const usuarioId = session.user.id;
+
+    // 2. Verificar si el producto ya está en el carrito de la base de datos
+    const { data: itemExistente, error: errorBusqueda } = await supabase
+        .from('carrito')
+        .select('*')
+        .eq('usuario_id', usuarioId)
+        .eq('producto_id', id)
+        .single();
+
+    if (errorBusqueda && errorBusqueda.code !== 'PGRST116') { // PGRST116 es "no se encontraron filas"
+        console.error('Error al buscar en el carrito:', errorBusqueda);
+        return;
+    }
+
+    if (itemExistente) {
+        // Actualizar cantidad
+        const { error: errorUpdate } = await supabase
+            .from('carrito')
+            .update({ cantidad: itemExistente.cantidad + 1 })
+            .eq('id', itemExistente.id);
+        
+        if (errorUpdate) console.error('Error al actualizar cantidad:', errorUpdate);
+    } else {
+        // Insertar nuevo item
+        const { error: errorInsert } = await supabase
+            .from('carrito')
+            .insert([{ usuario_id: usuarioId, producto_id: id, cantidad: 1 }]);
+        
+        if (errorInsert) console.error('Error al insertar en el carrito:', errorInsert);
+    }
+
     alert("¡Producto agregado al carrito!");
 };
 

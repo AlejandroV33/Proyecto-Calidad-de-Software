@@ -41,7 +41,7 @@ if (registroForm) {
 
                 if (profileError) throw profileError;
 
-                alert('Registro exitoso. Revisa tu correo o inicia sesión directamente (según la configuración de tu Supabase).');
+                alert('Registro exitoso.');
                 window.location.href = 'login.html';
             }
         } catch (error) {

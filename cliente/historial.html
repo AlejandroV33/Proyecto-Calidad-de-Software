@@ -10,17 +10,19 @@
 <nav class="navbar">
   <a href="../index.html" class="logo">TechCart</a>
   <div class="nav-links">
+    <a href="../catalogo.html">Catálogo</a>
     <a href="../carrito/carrito.html">Mi Carrito</a>
   </div>
 </nav>
 
 <div class="container fade-in visible">
-  <h2>Historial de Mis Pedidos</h2>
+...
   <div id="listaPedidos" style="margin-top: 2rem;">
     <p>Cargando pedidos...</p>
   </div>
 </div>
 
+<script type="module" src="../js/global.js"></script>
 <script type="module">
   import { supabase } from '../js/supabaseClient.js';
 
