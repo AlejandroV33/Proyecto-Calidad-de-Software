@@ -60,3 +60,48 @@ CREATE TABLE carrito (
   cantidad INTEGER DEFAULT 1,
   UNIQUE(usuario_id, producto_id)
 );
+
+-- 9. Funcion para mantener proteger el stock vs compras simpultaneas
+CREATE OR REPLACE FUNCTION realizar_compra(
+    p_producto_id UUID,
+    p_cantidad INTEGER
+)
+RETURNS BOOLEAN
+LANGUAGE plpgsql
+AS $$
+DECLARE
+    v_stock INTEGER;
+BEGIN
+
+    -- Bloquear fila del producto
+    SELECT stock
+    INTO v_stock
+    FROM productos
+    WHERE id = p_producto_id
+    FOR UPDATE;
+
+    -- Verificar stock
+    IF v_stock < p_cantidad THEN
+        RETURN FALSE;
+    END IF;
+
+    -- Descontar stock
+    UPDATE productos
+    SET stock = stock - p_cantidad
+    WHERE id = p_producto_id;
+
+    RETURN TRUE;
+END;
+$$;
+
+-- 10. Politicas para: Clientes solo ven sus pedidos, y Vendedores solo editan sus productos
+
+CREATE POLICY "Usuarios ven sus pedidos"
+ON pedidos
+FOR SELECT
+USING (auth.uid() = cliente_id);
+
+CREATE POLICY "Vendedor edita sus productos"
+ON productos
+FOR UPDATE
+USING (auth.uid() = vendedor_id);

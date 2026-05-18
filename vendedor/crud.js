@@ -69,14 +69,32 @@ if (formProducto) {
     formProducto.addEventListener('submit', async (e) => {
         e.preventDefault();
 
+        const nombre = document.getElementById('prodNombre').value;
+        const descripcion = document.getElementById('prodDesc').value;
+        const precio = parseFloat(document.getElementById('prodPrecio').value);
+        const stock = parseInt(document.getElementById('prodStock').value);
+        const imagen_url = document.getElementById('prodImg').value;
+        const categoria_id = parseInt(document.getElementById('prodCategoria').value);
+
+        // Validaciones de negocio
+        if (precio <= 0) {
+            alert('El precio debe ser un número positivo mayor a 0.');
+            return;
+        }
+
+        if (stock < 0) {
+            alert('El stock disponible no puede ser un número negativo.');
+            return;
+        }
+
         const nuevoProducto = {
             vendedor_id: usuarioActual,
-            nombre: document.getElementById('prodNombre').value,
-            descripcion: document.getElementById('prodDesc').value,
-            precio: parseFloat(document.getElementById('prodPrecio').value),
-            stock: parseInt(document.getElementById('prodStock').value),
-            imagen_url: document.getElementById('prodImg').value,
-            categoria_id: parseInt(document.getElementById('prodCategoria').value)
+            nombre,
+            descripcion,
+            precio,
+            stock,
+            imagen_url,
+            categoria_id
         };
 
         const { error } = await supabase.from('productos').insert([nuevoProducto]);

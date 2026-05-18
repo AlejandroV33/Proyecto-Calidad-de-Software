@@ -26,16 +26,49 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // Actualizar el Header basado en el estado de autenticación
+    // Actualizar el Header basado en el estado de autenticación y la página actual
     actualizarHeader();
 });
 
 async function actualizarHeader() {
     const { data: { session } } = await supabase.auth.getSession();
     const navLinks = document.querySelector('.nav-links');
+    if (!navLinks) return;
 
-    if (session && navLinks) {
-        // Obtener datos del perfil
+    const prefix = getPathPrefix();
+    const path = window.location.pathname;
+
+    // 1. Limpiar el contenedor para reconstruirlo de forma consistente
+    navLinks.innerHTML = '';
+
+    // 2. Definir las pestañas principales (Links de la izquierda)
+    const pestañas = [
+        { nombre: 'Catálogo', href: `${prefix}catalogo.html`, pattern: 'catalogo.html' },
+        { nombre: '🛒 Mi Carrito', href: `${prefix}carrito/carrito.html`, pattern: 'carrito/carrito.html' },
+        { nombre: 'Mis Pedidos', href: `${prefix}cliente/historial.html`, pattern: 'historial.html' }
+    ];
+
+    // Añadir "Seguir Comprando" solo si estamos en el carrito
+    if (path.includes('carrito.html')) {
+        pestañas.push({ nombre: 'Seguir Comprando', href: `${prefix}catalogo.html`, pattern: 'fake-never-active' });
+    }
+
+    pestañas.forEach(p => {
+        const link = document.createElement('a');
+        link.href = p.href;
+        link.textContent = p.nombre;
+        // Lógica para marcar pestaña activa
+        if (path.includes(p.pattern)) {
+            link.classList.add('active');
+        }
+        navLinks.appendChild(link);
+    });
+
+    // 3. Contenedor de Auth/Perfil (A la derecha)
+    const authContainer = document.createElement('div');
+    authContainer.className = 'auth-container-header';
+
+    if (session) {
         const { data: perfil } = await supabase
             .from('perfiles')
             .select('nombre_completo, rol')
@@ -43,28 +76,28 @@ async function actualizarHeader() {
             .single();
 
         if (perfil) {
-            // Limpiar enlaces de auth actuales (Iniciar Sesión / Registrarse)
-            const authLinks = navLinks.querySelectorAll('a[href*="login"], a[href*="registro"]');
-            authLinks.forEach(link => link.remove());
-
-            // Crear el contenedor de perfil
-            const profileDiv = document.createElement('div');
-            profileDiv.style.display = 'flex';
-            profileDiv.style.alignItems = 'center';
-            profileDiv.style.gap = '1rem';
-            profileDiv.style.marginLeft = '1rem';
+            // Si es vendedor, añadir link al panel antes del perfil
+            if (perfil.rol === 'vendedor') {
+                const dashboardLink = document.createElement('a');
+                dashboardLink.href = `${prefix}vendedor/dashboard.html`;
+                dashboardLink.textContent = 'Panel Vendedor';
+                dashboardLink.style.color = 'white';
+                dashboardLink.style.marginRight = '1rem';
+                if (path.includes('dashboard.html')) dashboardLink.classList.add('active');
+                authContainer.appendChild(dashboardLink);
+            }
 
             // Nombre y Rol
             const userInfo = document.createElement('span');
-            userInfo.innerHTML = `<strong>${perfil.nombre_completo}</strong> (${perfil.rol})`;
+            userInfo.innerHTML = `<strong>${perfil.nombre_completo}</strong> <small style="opacity:0.8">(${perfil.rol})</small>`;
             userInfo.style.color = 'white';
 
-            // Icono (Simple con CSS)
+            // Icono
             const profileIcon = document.createElement('div');
-            profileIcon.style.width = '32px';
-            profileIcon.style.height = '32px';
+            profileIcon.style.width = '30px';
+            profileIcon.style.height = '30px';
             profileIcon.style.borderRadius = '50%';
-            profileIcon.style.backgroundColor = 'var(--primary-color)';
+            profileIcon.style.backgroundColor = 'rgba(255,255,255,0.2)';
             profileIcon.style.display = 'flex';
             profileIcon.style.alignItems = 'center';
             profileIcon.style.justifyContent = 'center';
@@ -74,31 +107,39 @@ async function actualizarHeader() {
             // Botón Cerrar Sesión
             const btnLogout = document.createElement('button');
             btnLogout.textContent = 'Cerrar Sesión';
-            btnLogout.className = 'btn btn-outline';
-            btnLogout.style.padding = '0.4rem 1rem';
-            btnLogout.style.fontSize = '0.9rem';
+            btnLogout.className = 'btn btn-logout';
+            btnLogout.style.padding = '0.3rem 0.8rem';
+            btnLogout.style.fontSize = '0.85rem';
             btnLogout.onclick = async () => {
                 await supabase.auth.signOut();
-                // Redirigir al index relativo a la ubicación actual
-                const prefix = getPathPrefix();
                 window.location.href = `${prefix}index.html`;
             };
 
-            profileDiv.appendChild(profileIcon);
-            profileDiv.appendChild(userInfo);
-            profileDiv.appendChild(btnLogout);
-            navLinks.appendChild(profileDiv);
-
-            // Si es vendedor, añadir link al dashboard si no está
-            if (perfil.rol === 'vendedor') {
-                const dashboardLink = document.createElement('a');
-                const prefix = getPathPrefix();
-                dashboardLink.href = `${prefix}vendedor/dashboard.html`;
-                dashboardLink.textContent = 'Panel Vendedor';
-                navLinks.insertBefore(dashboardLink, profileDiv);
-            }
+            authContainer.appendChild(profileIcon);
+            authContainer.appendChild(userInfo);
+            authContainer.appendChild(btnLogout);
         }
+    } else {
+        // Enlaces de Iniciar Sesión / Registro para usuarios no logueados
+        const loginLink = document.createElement('a');
+        loginLink.href = `${prefix}login/login.html`;
+        loginLink.textContent = 'Iniciar Sesión';
+        loginLink.style.color = 'white';
+        if (path.includes('login.html')) loginLink.classList.add('active');
+
+        const registroLink = document.createElement('a');
+        registroLink.href = `${prefix}login/registro.html`;
+        registroLink.textContent = 'Registrarse';
+        registroLink.className = 'btn btn-outline';
+        registroLink.style.color = 'white';
+        registroLink.style.borderColor = 'white';
+        if (path.includes('registro.html')) registroLink.classList.add('active');
+
+        authContainer.appendChild(loginLink);
+        authContainer.appendChild(registroLink);
     }
+
+    navLinks.appendChild(authContainer);
 }
 
 function getPathPrefix() {

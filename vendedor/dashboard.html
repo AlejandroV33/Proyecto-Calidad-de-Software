@@ -25,8 +25,8 @@
       <input type="text" id="prodNombre" class="form-control" placeholder="Nombre del producto" required>
       <textarea id="prodDesc" class="form-control" placeholder="Descripción" required></textarea>
       <div style="display: flex; gap: 1rem;">
-        <input type="number" id="prodPrecio" class="form-control" placeholder="Precio ($)" step="0.01" required>
-        <input type="number" id="prodStock" class="form-control" placeholder="Stock disponible" required>
+        <input type="number" id="prodPrecio" class="form-control" placeholder="Precio ($)" step="0.01" min="0.01" required>
+        <input type="number" id="prodStock" class="form-control" placeholder="Stock disponible" min="0" required>
       </div>
       <input type="text" id="prodImg" class="form-control" placeholder="URL de la imagen">
       <select id="prodCategoria" class="form-control" required>

@@ -5,6 +5,33 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Mis Pedidos - TechCart</title>
   <link rel="stylesheet" href="../css/global.css">
+  <style>
+    .detalle-pedido {
+      margin-top: 1rem;
+      padding-top: 1rem;
+      border-top: 1px solid #eee;
+      display: none; /* Oculto por defecto */
+    }
+    .pedido-header {
+      cursor: pointer;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .item-detalle {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.9rem;
+      margin-bottom: 0.5rem;
+    }
+    .badge-status {
+      padding: 0.2rem 0.6rem;
+      border-radius: 20px;
+      font-size: 0.8rem;
+      font-weight: bold;
+      color: white;
+    }
+  </style>
 </head>
 <body>
 <nav class="navbar">
@@ -16,9 +43,11 @@
 </nav>
 
 <div class="container fade-in visible">
-...
-  <div id="listaPedidos" style="margin-top: 2rem;">
-    <p>Cargando pedidos...</p>
+  <h2>Historial de Mis Pedidos</h2>
+  <p style="color: var(--text-muted); margin-bottom: 2rem;">Haz clic en un pedido para ver los detalles.</p>
+  
+  <div id="listaPedidos">
+    <p>Cargando historial...</p>
   </div>
 </div>
 
@@ -35,49 +64,101 @@
 
     const contenedor = document.getElementById('listaPedidos');
 
-    // Consultar pedidos del cliente ordenados por fecha
+    // Consultar pedidos del cliente con sus detalles y productos asociados
     const { data: pedidos, error } = await supabase
             .from('pedidos')
-            .select('*')
+            .select(`
+                *,
+                detalles_pedido (
+                    cantidad,
+                    precio_unitario,
+                    productos (
+                        nombre
+                    )
+                )
+            `)
             .eq('cliente_id', session.user.id)
             .order('fecha', { ascending: false });
 
-    if (error || !pedidos) {
+    if (error) {
+      console.error(error);
       contenedor.innerHTML = '<p>Error al cargar el historial.</p>';
       return;
     }
 
-    if (pedidos.length === 0) {
-      contenedor.innerHTML = '<p>Aún no has realizado ninguna compra.</p>';
+    if (!pedidos || pedidos.length === 0) {
+      contenedor.innerHTML = `
+        <div class="card" style="text-align: center; padding: 3rem;">
+            <h3 style="color: var(--text-muted);">No has realizado ninguna compra todavía.</h3>
+            <p style="margin-top: 1rem;">¡Anímate a explorar nuestro catálogo!</p>
+            <a href="../catalogo.html" class="btn btn-primary" style="margin-top: 1.5rem;">Ir al Catálogo</a>
+        </div>
+      `;
       return;
     }
 
     contenedor.innerHTML = '';
     pedidos.forEach(pedido => {
-      // Formatear fecha
-      const fecha = new Date(pedido.fecha).toLocaleDateString();
+      const fecha = new Date(pedido.fecha).toLocaleDateString('es-ES', {
+          year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit'
+      });
 
-      // Colores para el estado
       let colorEstado = '#666';
-      if(pedido.estado === 'pendiente') colorEstado = '#f0ad4e'; // Naranja
-      if(pedido.estado === 'enviado') colorEstado = '#5bc0de'; // Azul claro
-      if(pedido.estado === 'entregado') colorEstado = '#5cb85c'; // Verde
+      if(pedido.estado === 'pendiente') colorEstado = '#f0ad4e';
+      if(pedido.estado === 'enviado') colorEstado = '#5bc0de';
+      if(pedido.estado === 'entregado') colorEstado = '#5cb85c';
 
-      contenedor.innerHTML += `
-                    <div class="card" style="margin-bottom: 1rem; border-left: 5px solid ${colorEstado};">
-                        <div style="display: flex; justify-content: space-between; align-items: center;">
-                            <div>
-                                <p style="font-size: 0.9rem; color: var(--text-muted);">Pedido ID: ${pedido.id.substring(0,8)}... | Fecha: ${fecha}</p>
-                                <h4 style="margin-top: 0.5rem;">Estado: <span style="color: ${colorEstado}; text-transform: uppercase;">${pedido.estado}</span></h4>
-                            </div>
-                            <div>
-                                <h3>Total: $${pedido.total}</h3>
-                            </div>
-                        </div>
-                    </div>
-                `;
+      const pedidoCard = document.createElement('div');
+      pedidoCard.className = 'card';
+      pedidoCard.style.marginBottom = '1rem';
+      pedidoCard.style.borderLeft = `5px solid ${colorEstado}`;
+
+      // Construir el HTML de los detalles
+      let detallesHTML = '';
+      pedido.detalles_pedido.forEach(det => {
+          detallesHTML += `
+            <div class="item-detalle">
+                <span>${det.productos.nombre} x ${det.cantidad}</span>
+                <span>$${(det.precio_unitario * det.cantidad).toFixed(2)}</span>
+            </div>
+          `;
+      });
+
+      pedidoCard.innerHTML = `
+        <div class="pedido-header" onclick="toggleDetalle(this)">
+            <div>
+                <p style="font-size: 0.8rem; color: var(--text-muted);">Pedido #${pedido.id.substring(0,8)}</p>
+                <p style="font-weight: 500;">${fecha}</p>
+                <span class="badge-status" style="background-color: ${colorEstado}">${pedido.estado.toUpperCase()}</span>
+            </div>
+            <div style="text-align: right;">
+                <h3 style="color: var(--primary-color);">$${pedido.total.toFixed(2)}</h3>
+                <small style="color: var(--text-muted);">Ver detalles ▾</small>
+            </div>
+        </div>
+        <div class="detalle-pedido">
+            <h4 style="margin-bottom: 1rem; font-size: 1rem;">Productos:</h4>
+            ${detallesHTML}
+            <div style="margin-top: 1rem; text-align: right; border-top: 1px dashed #ddd; padding-top: 0.5rem;">
+                <strong>Total pagado: $${pedido.total.toFixed(2)}</strong>
+            </div>
+        </div>
+      `;
+      contenedor.appendChild(pedidoCard);
     });
   }
+
+  window.toggleDetalle = (header) => {
+      const detalle = header.nextElementSibling;
+      const indicator = header.querySelector('small');
+      if (detalle.style.display === 'block') {
+          detalle.style.display = 'none';
+          indicator.textContent = 'Ver detalles ▾';
+      } else {
+          detalle.style.display = 'block';
+          indicator.textContent = 'Cerrar detalles ▴';
+      }
+  };
 
   document.addEventListener('DOMContentLoaded', cargarHistorial);
 </script>

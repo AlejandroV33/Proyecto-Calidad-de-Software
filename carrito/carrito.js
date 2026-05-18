@@ -79,8 +79,12 @@ async function renderizarCarrito() {
 
 // Actualizar cantidad en la BD
 window.actualizarCant = async (itemId, nuevaCantidad) => {
-    const cant = parseInt(nuevaCantidad);
-    if (cant < 1) return;
+    let cant = parseInt(nuevaCantidad);
+    
+    // Evitar valores negativos o cero en el input
+    if (isNaN(cant) || cant < 1) {
+        cant = 1;
+    }
 
     const { error } = await supabase
         .from('carrito')
@@ -89,13 +93,15 @@ window.actualizarCant = async (itemId, nuevaCantidad) => {
 
     if (error) {
         console.error('Error al actualizar:', error);
-    } else {
-        renderizarCarrito();
     }
+    
+    // Siempre renderizar para corregir el valor en el input visualmente
+    renderizarCarrito();
 };
 
 // Eliminar item de la BD
 window.eliminarItem = async (itemId) => {
+    if (!confirm('¿Quitar este producto del carrito?')) return;
     const { error } = await supabase
         .from('carrito')
         .delete()
@@ -110,8 +116,15 @@ window.eliminarItem = async (itemId) => {
 
 // Confirmar Compra
 btnConfirmar.addEventListener('click', async () => {
+    // Validación de seguridad adicional
     if (carritoActual.length === 0) {
         alert("El carrito está vacío.");
+        return;
+    }
+
+    const tieneCantidadesInvalidas = carritoActual.some(item => item.cantidad < 1);
+    if (tieneCantidadesInvalidas) {
+        alert("Hay productos con cantidades no válidas. Por favor corrígelas.");
         return;
     }
 
