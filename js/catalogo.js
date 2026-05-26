@@ -24,6 +24,9 @@ async function cargarCatalogo() {
 
     let query = supabase.from('productos').select('*, categorias(nombre)');
 
+    // Filtrar productos con stock disponible
+    query = query.gt('stock', 0);
+
     // Aplicar filtros según la historia de usuario
     if (nombre) query = query.ilike('nombre', `%${nombre}%`);
     if (precioMax) query = query.lte('precio', precioMax);
@@ -45,16 +48,68 @@ async function cargarCatalogo() {
     data.forEach(prod => {
         gridProductos.innerHTML += `
             <div class="card fade-in visible">
-                <img src="${prod.imagen_url || 'https://via.placeholder.com/150'}" alt="${prod.nombre}" style="width:100%; border-radius:8px;">
+                <img src="${prod.imagen_url || 'https://via.placeholder.com/150'}" alt="${prod.nombre}" style="width:100%; height: 200px; object-fit: cover; border-radius:8px;">
                 <h3 style="margin-top: 1rem;">${prod.nombre}</h3>
                 <p style="color: var(--text-muted);">${prod.categorias.nombre}</p>
                 <p>${prod.descripcion.substring(0, 60)}...</p>
                 <h2 style="color: var(--primary-color); margin: 0.5rem 0;">$${prod.precio}</h2>
-                <button class="btn btn-primary" onclick="agregarAlCarrito('${prod.id}')" style="width: 100%;">Agregar al Carrito</button>
+                <div style="display: flex; flex-direction: column; gap: 0.5rem;">
+                    <button class="btn btn-outline" onclick="verDetalles('${prod.id}')" style="width: 100%;">Ver Detalles</button>
+                    <button class="btn btn-primary" onclick="agregarAlCarrito('${prod.id}')" style="width: 100%;">Agregar al Carrito</button>
+                </div>
             </div>
         `;
     });
 }
+
+// Función para ver detalles del producto
+window.verDetalles = async (id) => {
+    const { data: prod, error } = await supabase
+        .from('productos')
+        .select('*, categorias(nombre)')
+        .eq('id', id)
+        .single();
+
+    if (error || !prod) {
+        alert("No se pudo cargar la información del producto.");
+        return;
+    }
+
+    const modal = document.getElementById('modalDetalles');
+    const contenido = document.getElementById('detalleContenido');
+
+    contenido.innerHTML = `
+        <div style="flex: 1; min-width: 300px;">
+            <img src="${prod.imagen_url || 'https://via.placeholder.com/150'}" alt="${prod.nombre}" style="width:100%; border-radius:12px; box-shadow: var(--shadow-md);">
+        </div>
+        <div style="flex: 1.2; min-width: 300px; display: flex; flex-direction: column; justify-content: center;">
+            <h1 style="font-size: 2.5rem; margin-bottom: 0.5rem;">${prod.nombre}</h1>
+            <p style="color: var(--primary-color); font-weight: bold; margin-bottom: 1rem; text-transform: uppercase; letter-spacing: 1px;">${prod.categorias.nombre}</p>
+            <p style="font-size: 1.1rem; line-height: 1.8; color: var(--text-muted); margin-bottom: 1.5rem;">${prod.descripcion}</p>
+            <div style="background: #f8f9fa; padding: 1.5rem; border-radius: 12px; margin-bottom: 1.5rem;">
+                <h2 style="color: var(--primary-color); font-size: 2rem; margin-bottom: 0.5rem;">$${prod.precio}</h2>
+                <p style="color: ${prod.stock > 0 ? '#28a745' : '#dc3545'}; font-weight: 600;">
+                    ${prod.stock > 0 ? `Stock Disponible: ${prod.stock}` : 'Sin Stock'}
+                </p>
+            </div>
+            <button class="btn btn-primary" onclick="agregarAlCarrito('${prod.id}')" style="padding: 1rem; font-size: 1.1rem;">Agregar al Carrito</button>
+        </div>
+    `;
+
+    modal.style.display = 'block';
+};
+
+// Cerrar modal
+document.getElementById('cerrarModal').onclick = () => {
+    document.getElementById('modalDetalles').style.display = 'none';
+};
+
+window.onclick = (event) => {
+    const modal = document.getElementById('modalDetalles');
+    if (event.target == modal) {
+        modal.style.display = 'none';
+    }
+};
 
 // Para usar en el botón de agregar al carrito
 window.agregarAlCarrito = async (id) => {

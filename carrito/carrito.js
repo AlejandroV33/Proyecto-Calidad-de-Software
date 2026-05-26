@@ -139,43 +139,29 @@ btnConfirmar.addEventListener('click', async () => {
     }
 
     try {
-        const total = parseFloat(totalCarritoEl.textContent);
+        // Llamar a la función atómica en la base de datos
+        const { data: pedidoId, error: errorProcesamiento } = await supabase.rpc('procesar_pedido_v2', {
+            p_usuario_id: session.user.id
+        });
 
-        // 1. Crear el pedido
-        const { data: pedido, error: errorPedido } = await supabase
-            .from('pedidos')
-            .insert([{ cliente_id: session.user.id, estado: 'pendiente', total: total }])
-            .select()
-            .single();
+        if (errorProcesamiento) {
+            // Manejar errores de stock lanzados por la BD
+            if (errorProcesamiento.message.includes('Stock insuficiente')) {
+                alert(errorProcesamiento.message);
+            } else {
+                throw errorProcesamiento;
+            }
+            return;
+        }
 
-        if (errorPedido) throw errorPedido;
-
-        // 2. Insertar los detalles del pedido
-        const detalles = carritoActual.map(item => ({
-            pedido_id: pedido.id,
-            producto_id: item.producto_id,
-            cantidad: item.cantidad,
-            precio_unitario: item.productos.precio
-        }));
-
-        const { error: errorDetalles } = await supabase.from('detalles_pedido').insert(detalles);
-        if (errorDetalles) throw errorDetalles;
-
-        // 3. Limpiar carrito en la BD
-        const { error: errorLimpieza } = await supabase
-            .from('carrito')
-            .delete()
-            .eq('usuario_id', session.user.id);
-        
-        if (errorLimpieza) throw errorLimpieza;
-
-        alert("¡Compra confirmada! Tu pedido ha sido registrado.");
+        alert("¡Compra confirmada! Tu pedido ha sido registrado y el stock actualizado.");
         window.location.href = '../cliente/historial.html';
 
     } catch (error) {
         console.error(error);
         msgError.textContent = "Hubo un error al procesar tu compra.";
         msgError.style.display = 'block';
+    } finally {
         btnConfirmar.textContent = 'Confirmar Compra';
         btnConfirmar.disabled = false;
     }
